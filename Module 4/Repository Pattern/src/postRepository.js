@@ -1,51 +1,80 @@
-const postStore = require('../data/postStore');
+// src/repositories/postRepository.js
+
+// Repository Pattern:
+// Storage is handled only inside this repository.
+// If we replace this implementation with Prisma later,
+// the service, controller, and API contract will remain unchanged.
+
+const posts = new Map([
+  [
+    1,
+    {
+      id: 1,
+      title: 'First post',
+      body: 'Repository boundaries protect change.',
+      authorId: 7,
+    },
+  ],
+  [
+    2,
+    {
+      id: 2,
+      title: 'Second post',
+      body: 'Services should speak in domain language.',
+      authorId: 8,
+    },
+  ],
+]);
+
+let nextId = 3;
 
 const postRepository = {
+  // Return all posts as a new array
   findAll() {
-    return postStore.posts.map(post => ({ ...post }));
+    return Array.from(posts.values(), (post) => ({ ...post }));
   },
 
+  // Find a post by ID
   findById(id) {
-    const post = postStore.posts.find(
-      post => post.id === Number(id)
-    );
-
+    const post = posts.get(Number(id));
     return post ? { ...post } : null;
   },
 
+  // Create a new post
   create(fields) {
     const post = {
-      id: postStore.nextId(),
       ...fields,
+      id: nextId++,
     };
 
-    postStore.posts.push(post);
+    posts.set(post.id, post);
 
     return { ...post };
   },
 
+  // Update an existing post
   update(id, patch) {
-    const post = postStore.posts.find(
-      post => post.id === Number(id)
-    );
+    const postId = Number(id);
+    const post = posts.get(postId);
 
-    if (!post) return null;
+    if (!post) {
+      return null;
+    }
 
-    Object.assign(post, patch);
+    const updatedPost = {
+      ...post,
+      ...patch,
+      id: postId,
+    };
 
-    return { ...post };
+    posts.set(postId, updatedPost);
+
+    return { ...updatedPost };
   },
 
+  // Remove a post
   remove(id) {
-    const index = postStore.posts.findIndex(
-      post => post.id === Number(id)
-    );
-
-    if (index === -1) return false;
-
-    postStore.posts.splice(index, 1);
-
-    return true;
+    return posts.delete(Number(id));
   },
 };
 
